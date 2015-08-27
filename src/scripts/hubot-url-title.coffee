@@ -15,6 +15,8 @@
 #
 # Author:
 #   ajacksified, dentarg
+# modified by
+#   Chris Hamm
 
 cheerio    = require 'cheerio'
 _          = require 'underscore'
@@ -26,7 +28,7 @@ module.exports = (robot) ->
   if process.env.HUBOT_URL_TITLE_IGNORE_USERS?
     ignoredusers = process.env.HUBOT_URL_TITLE_IGNORE_USERS.split(',')
 
-  robot.hear /(http(?:s?):\/\/(\S*))/i, (msg) ->
+  robot.hear /can anyone get to this url (http(?:s?):\/\/(\S*))/i, (msg) ->
     url = msg.match[1]
 
     username = msg.message.user.name
@@ -45,8 +47,16 @@ module.exports = (robot) ->
       request(
         url
         (error, response, body) ->
-          if response.statusCode == 200
-            document = cheerio.load(body)
-            title = document('title').text().trim()
-            msg.send "#{title}"
+          if error
+            msg.send "Url checker Encountered an error :( #{error} ."
+            return
+          else
+            if response.statusCode == 200
+              document = cheerio.load(body)
+              title = document('title').text().trim()
+              msg.send "#{url} worked out fine returning title | #{title} |"
+            else
+              if response.statusCode == 404
+                 msg.send "#{url} errored out."
+                 return
       )
